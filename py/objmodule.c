@@ -166,6 +166,11 @@ mp_obj_t mp_obj_new_module(qstr module_name) {
     return MP_OBJ_FROM_PTR(o);
 }
 
+void mp_obj_module_unregister(qstr module_name) {
+    mp_map_t *mp_loaded_modules_map = &MP_STATE_VM(mp_loaded_modules_dict).map;
+    mp_map_lookup(mp_loaded_modules_map, MP_OBJ_NEW_QSTR(module_name), MP_MAP_LOOKUP_REMOVE_IF_FOUND);
+}
+
 /******************************************************************************/
 // Global module table and related functions
 
