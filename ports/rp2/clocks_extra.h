@@ -28,6 +28,7 @@
 
 #include "hardware/clocks.h"
 
+bool rp2_set_freq(uint32_t freq);
 void runtime_init_clocks_optional_usb(bool init_usb);
 
 #endif // MICROPY_INCLUDED_RP2_CLOCKS_EXTRA_H

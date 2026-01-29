@@ -32,7 +32,6 @@
 #include "modmachine.h"
 #include "uart.h"
 #include "rp2_psram.h"
-#include "rp2_flash.h"
 #include "clocks_extra.h"
 #include "hardware/pll.h"
 #include "hardware/structs/rosc.h"
@@ -96,32 +95,21 @@ static mp_obj_t mp_machine_get_freq(void) {
 
 static void mp_machine_set_freq(size_t n_args, const mp_obj_t *args) {
     mp_int_t freq = mp_obj_get_int(args[0]);
-
-    // If necessary, increase the flash divider before increasing the clock speed
-    const int old_freq = clock_get_hz(clk_sys);
-    rp2_flash_set_timing_for_freq(MAX(freq, old_freq));
-
-    if (!set_sys_clock_khz(freq / 1000, false)) {
+    if (!rp2_set_freq(freq)) {
         mp_raise_ValueError(MP_ERROR_TEXT("cannot change frequency"));
     }
     if (n_args > 1) {
         mp_int_t freq_peri = mp_obj_get_int(args[1]);
         if (freq_peri != (USB_CLK_KHZ * KHZ)) {
             if (freq_peri == freq) {
-                clock_configure(clk_peri,
+                clock_configure_undivided(clk_peri,
                     0,
                     CLOCKS_CLK_PERI_CTRL_AUXSRC_VALUE_CLKSRC_PLL_SYS,
-                    freq,
                     freq);
             } else {
                 mp_raise_ValueError(MP_ERROR_TEXT("peripheral freq must be 48_000_000 or the same as the MCU freq"));
             }
         }
-    }
-
-    // If clock speed was reduced, maybe we can reduce the flash divider
-    if (freq < old_freq) {
-        rp2_flash_set_timing_for_freq(freq);
     }
 
     #if MICROPY_HW_ENABLE_UART_REPL
@@ -143,6 +131,7 @@ static void alarm_sleep_callback(uint alarm_id) {
 // Set this to 1 to enable some debug of the interrupt that woke the device
 #define DEBUG_LIGHTSLEEP 0
 
+// TODO: review all clock stuff here
 static void mp_machine_lightsleep(size_t n_args, const mp_obj_t *args) {
     mp_int_t delay_ms = 0;
     bool use_timer_alarm = false;
