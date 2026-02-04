@@ -186,19 +186,17 @@ static void mp_machine_lightsleep(size_t n_args, const mp_obj_t *args) {
     clock_stop(clk_hstx);
     #endif
 
-    // CLK_REF = XOSC
-    clock_configure(clk_ref, CLOCKS_CLK_REF_CTRL_SRC_VALUE_XOSC_CLKSRC, 0, XOSC_HZ, XOSC_HZ);
-
+    // Assumption: CLK_REF = XOSC (12 MHz)
     // CLK_SYS = CLK_REF
-    clock_configure(clk_sys, CLOCKS_CLK_SYS_CTRL_SRC_VALUE_CLK_REF, 0, XOSC_HZ, XOSC_HZ);
+    clock_configure_undivided(clk_sys, CLOCKS_CLK_SYS_CTRL_SRC_VALUE_CLK_REF, 0, XOSC_HZ);
 
     // CLK_RTC = XOSC / 256
     #if PICO_RP2040
-    clock_configure(clk_rtc, 0, CLOCKS_CLK_RTC_CTRL_AUXSRC_VALUE_XOSC_CLKSRC, XOSC_HZ, XOSC_HZ / 256);
+    clock_configure_int_divider(clk_rtc, 0, CLOCKS_CLK_RTC_CTRL_AUXSRC_VALUE_XOSC_CLKSRC, XOSC_HZ, 256);
     #endif
 
-    // CLK_PERI = CLK_SYS
-    clock_configure(clk_peri, 0, CLOCKS_CLK_PERI_CTRL_AUXSRC_VALUE_CLK_SYS, XOSC_HZ, XOSC_HZ);
+    // CLK_PERI = XOSC (12 MHz)
+    clock_configure_undivided(clk_peri, 0, CLOCKS_CLK_PERI_CTRL_AUXSRC_VALUE_XOSC_CLKSRC, XOSC_HZ);
 
     // Disable PLLs.
     pll_deinit(pll_sys);
